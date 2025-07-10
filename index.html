@@ -2,18 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Manga Finder</title>
     <link rel="stylesheet" href="style.css">
-    <!-- IMPORTANT: Include the Telegram Web App script -->
+    <!-- The magic script that connects to Telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+
     <div class="container">
-        <h1>Manga Finder Mini App</h1>
-        <p>Welcome! This is the future home of your beautiful manga search interface.</p>
-        <p id="user-info"></p>
+        <header>
+            <h1>Manga Finder 📖</h1>
+        </header>
+
+        <main>
+            <form id="search-form" class="search-form">
+                <input type="search" id="search-input" placeholder="e.g., Solo Leveling, Berserk..." required>
+                <button type="submit">🔍</button>
+            </form>
+
+            <!-- This is where the search results will appear -->
+            <div id="results-grid" class="results-grid">
+                <!-- Manga cards will be inserted here by JavaScript -->
+            </div>
+
+            <!-- This will show loading spinners or messages -->
+            <div id="status-container" class="status-container" style="display: none;">
+                <div class="loader"></div>
+                <p id="status-text"></p>
+            </div>
+        </main>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
