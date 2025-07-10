@@ -1,6 +1,6 @@
 // ### IMPORTANT: Paste your Replit backend URL here ###
 // ### Make sure to replace the placeholder with your real URL! ###
-const BACKEND_URL = "https://a6d8181d-7a73-4a1c-aa8c-8ba79d7fe02e-00-o211iw2hku6j.spock.replit.dev/";
+const BACKEND_URL = "https://a6d8181d-7a73-4a1c-aa8c-8ba79d7fe02e-00-o211iw2hku6j.spock.replit.dev";
 
 // Initialize the Telegram Web App object
 const tg = window.Telegram.WebApp;
