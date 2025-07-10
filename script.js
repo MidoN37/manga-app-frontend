@@ -1,4 +1,3 @@
-// ### IMPORTANT: Make sure this is your correct Replit backend URL ###
 const BACKEND_URL = "https://a6d8181d-7a73-4a1c-aa8c-8ba79d7fe02e-00-o211iw2hku6j.spock.replit.dev";
 
 // Initialize the Telegram Web App object
@@ -12,6 +11,9 @@ const resultsGrid = document.getElementById('results-grid');
 const statusContainer = document.getElementById('status-container');
 const statusText = document.getElementById('status-text');
 const detailsView = document.getElementById('details-view');
+
+// Store current manga data to avoid re-fetching
+let currentMangaData = null;
 
 // --- Event Listeners ---
 searchForm.addEventListener('submit', handleSearch);
@@ -49,14 +51,51 @@ async function selectManga(slug) {
         const response = await fetch(`${BACKEND_URL}/api/details/${slug}`);
         if (!response.ok) throw new Error(`Server error: ${response.status}`);
         const data = await response.json();
+        currentMangaData = data; // Store data globally
         renderDetails(data);
         hideStatus();
-        // Show the back button in the Telegram header
         tg.BackButton.show();
     } catch (error) {
         console.error('Failed to fetch details:', error);
         showStatus('message', 'Oops! Could not get manga details.');
         tg.HapticFeedback.notificationOccurred('error');
+    }
+}
+
+async function handleDownload(chapters, title) {
+    tg.MainButton.setText('Starting Download...');
+    tg.MainButton.showProgress();
+    tg.HapticFeedback.impactOccurred('light');
+
+    const payload = {
+        chat_id: tg.initDataUnsafe.user.id,
+        chapters: chapters,
+        title: title
+    };
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/download`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Backend could not start the download.');
+
+        tg.showPopup({
+            title: 'Download Started!',
+            message: 'Your download has begun. I will send you the file in our chat. You can now close this window.',
+            buttons: [{ type: 'ok', text: 'Awesome!' }]
+        }, () => tg.close());
+
+    } catch (error) {
+        console.error('Download request failed:', error);
+        tg.showAlert('Something went wrong starting the download. Please try again.');
+    } finally {
+        tg.MainButton.hideProgress();
+        tg.MainButton.setText('Close');
+        tg.MainButton.onClick(() => tg.close());
+        tg.MainButton.show();
     }
 }
 
@@ -73,7 +112,6 @@ function renderResults(mangaList) {
         
         const card = document.createElement('div');
         card.className = 'manga-card';
-        // ### NEW ### Add the click handler
         card.onclick = () => selectManga(manga.slug); 
 
         card.innerHTML = `
@@ -94,13 +132,19 @@ function renderDetails(data) {
     const cover = details.md_covers?.[0]?.b2key;
     const coverUrl = cover ? `https://meo.comick.pictures/${cover}` : '';
 
-    let chaptersHtml = chapters.map(ch => `
-        <div class="chapter-item">
-            <span class="chapter-title">Chapter ${ch.chap || 'N/A'}${ch.title ? `: ${ch.title}` : ''}</span>
-            <button class="download-button" onclick="alert('Download coming soon!')">Download</button>
-        </div>
-    `).join('');
+    // Create chapter list items
+    let chaptersHtml = chapters.map(ch => {
+        const chapterTitle = `Chapter ${ch.chap || 'N/A'}${ch.title ? `: ${ch.title}` : ''}`;
+        // Note: We pass the chapter object as a string and parse it in the onclick handler
+        return `
+            <div class="chapter-item" onclick='handleDownload([${JSON.stringify(ch)}], "${details.title} - Ch ${ch.chap || ch.hid}")'>
+                <span class="chapter-title">${chapterTitle}</span>
+                <button class="download-button">GET</button>
+            </div>
+        `;
+    }).join('');
 
+    // The full HTML for the details view
     detailsView.innerHTML = `
         <div class="details-header">
             <img src="${coverUrl}" class="details-cover" alt="Cover">
@@ -112,15 +156,20 @@ function renderDetails(data) {
             </div>
         </div>
         <p class="details-description">${details.desc || 'No description available.'}</p>
+        <button class="download-all-button" id="download-all">Download All ${chapters.length} Chapters</button>
         <h3>Chapters</h3>
         <div class="chapter-list">
             ${chaptersHtml}
         </div>
     `;
+
+    // Add event listener for the "Download All" button separately
+    document.getElementById('download-all').addEventListener('click', () => {
+        handleDownload(currentMangaData.chapters, currentMangaData.details.title);
+    });
 }
 
 // --- UI State Functions ---
-
 function showStatus(type, message) {
     resultsGrid.style.display = 'none';
     detailsView.style.display = 'none';
@@ -135,12 +184,8 @@ function hideStatus() {
 }
 
 // --- Telegram Integration ---
-
-// Handle the Telegram back button
 tg.BackButton.onClick(() => {
-    // Hide the back button
     tg.BackButton.hide();
-    // Show the search results again
     detailsView.style.display = 'none';
     resultsGrid.style.display = 'grid';
 });
