@@ -106,7 +106,7 @@ async function handleDownload(chapters, title) {
     }).catch(e => {
         // This code runs if the ad fails to load
         console.error('Ad failed to load:', e);
-        tg.showAlert('The ad could not be loaded. Please try again in a moment.');
+        tg.showAlert('The ad could not be loaded. Please disable your Adblocker.');
         tg.MainButton.hideProgress();
     });
 }
