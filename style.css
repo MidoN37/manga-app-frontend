@@ -69,7 +69,6 @@ header h1 {
 /* --- Results Grid --- */
 .results-grid {
     display: grid;
-    /* This creates a responsive grid that automatically fits columns */
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
 }
@@ -90,7 +89,6 @@ header h1 {
 .manga-card img {
     width: 100%;
     display: block;
-    /* Enforces a consistent aspect ratio for all covers */
     aspect-ratio: 2 / 3;
     object-fit: cover;
 }
@@ -102,7 +100,6 @@ header h1 {
 .manga-card-title {
     font-weight: 600;
     font-size: 14px;
-    /* Truncate long titles */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -128,4 +125,81 @@ header h1 {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* --- Details View --- */
+.details-view {
+    text-align: left;
+}
+
+.details-header {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.details-cover {
+    width: 120px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.details-info h2 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+}
+
+.details-info p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: var(--hint-color);
+}
+
+.details-description {
+    font-size: 15px;
+    line-height: 1.5;
+    max-height: 150px; /* Limit height and allow scrolling */
+    overflow-y: auto;
+    padding-right: 10px; /* For scrollbar */
+    margin-bottom: 20px;
+}
+
+.chapter-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--secondary-bg-color);
+    border-radius: 10px;
+}
+
+.chapter-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--bg-color); /* Use main bg for separator */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chapter-item:hover {
+    background-color: var(--tg-theme-secondary-bg-color-dark, #e0e0e0);
+}
+
+.chapter-item:last-child {
+    border-bottom: none;
+}
+
+.chapter-title {
+    font-size: 15px;
+}
+
+.download-button {
+    padding: 5px 10px;
+    font-size: 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--button-color);
+    color: var(--button-text-color);
 }
