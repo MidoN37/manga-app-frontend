@@ -51,7 +51,7 @@ async function selectManga(slug) {
         const response = await fetch(`${BACKEND_URL}/api/details/${slug}`);
         if (!response.ok) throw new Error(`Server error: ${response.status}`);
         const data = await response.json();
-        currentMangaData = data; // Store data globally
+        currentMangaData = data;
         renderDetails(data);
         hideStatus();
         tg.BackButton.show();
@@ -62,41 +62,53 @@ async function selectManga(slug) {
     }
 }
 
+// ### NEW ### Updated download handler with ad logic
 async function handleDownload(chapters, title) {
-    tg.MainButton.setText('Starting Download...');
+    tg.MainButton.setText('Loading Ad...');
     tg.MainButton.showProgress();
     tg.HapticFeedback.impactOccurred('light');
 
-    const payload = {
-        chat_id: tg.initDataUnsafe.user.id,
-        chapters: chapters,
-        title: title
-    };
+    // This is the Monetag function call for a Rewarded Ad
+    show_9553790().then(() => {
+        // This code runs AFTER the user watches the ad.
+        // Now we proceed with the actual download request.
+        console.log('Ad finished, proceeding to download.');
+        
+        const payload = {
+            chat_id: tg.initDataUnsafe.user.id,
+            chapters: chapters,
+            title: title
+        };
 
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/download`, {
+        // Use fetch to send the download request to our backend
+        fetch(`${BACKEND_URL}/api/download`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
+        }).then(response => {
+            if (!response.ok) throw new Error('Backend could not start the download.');
+            
+            // Show a success popup and close the Mini App
+            tg.showPopup({
+                title: 'Download Started!',
+                message: 'Your download has begun. I will send you the file in our chat. You can now close this window.',
+                buttons: [{ type: 'ok', text: 'Awesome!' }]
+            }, () => tg.close());
+
+        }).catch(error => {
+            console.error('Download request failed:', error);
+            tg.showAlert('Something went wrong starting the download. Please try again.');
+        }).finally(() => {
+            // Hide the loading indicator on the main button
+            tg.MainButton.hideProgress();
         });
 
-        if (!response.ok) throw new Error('Backend could not start the download.');
-
-        tg.showPopup({
-            title: 'Download Started!',
-            message: 'Your download has begun. I will send you the file in our chat. You can now close this window.',
-            buttons: [{ type: 'ok', text: 'Awesome!' }]
-        }, () => tg.close());
-
-    } catch (error) {
-        console.error('Download request failed:', error);
-        tg.showAlert('Something went wrong starting the download. Please try again.');
-    } finally {
+    }).catch(e => {
+        // This code runs if the ad fails to load
+        console.error('Ad failed to load:', e);
+        tg.showAlert('The ad could not be loaded. Please try again in a moment.');
         tg.MainButton.hideProgress();
-        tg.MainButton.setText('Close');
-        tg.MainButton.onClick(() => tg.close());
-        tg.MainButton.show();
-    }
+    });
 }
 
 // --- Render Functions ---
@@ -132,19 +144,16 @@ function renderDetails(data) {
     const cover = details.md_covers?.[0]?.b2key;
     const coverUrl = cover ? `https://meo.comick.pictures/${cover}` : '';
 
-    // Create chapter list items
     let chaptersHtml = chapters.map(ch => {
         const chapterTitle = `Chapter ${ch.chap || 'N/A'}${ch.title ? `: ${ch.title}` : ''}`;
-        // Note: We pass the chapter object as a string and parse it in the onclick handler
         return `
             <div class="chapter-item" onclick='handleDownload([${JSON.stringify(ch)}], "${details.title} - Ch ${ch.chap || ch.hid}")'>
                 <span class="chapter-title">${chapterTitle}</span>
-                <button class="download-button">GET</button>
+                <button class="download-button">GET 🎬</button>
             </div>
         `;
     }).join('');
 
-    // The full HTML for the details view
     detailsView.innerHTML = `
         <div class="details-header">
             <img src="${coverUrl}" class="details-cover" alt="Cover">
@@ -156,14 +165,13 @@ function renderDetails(data) {
             </div>
         </div>
         <p class="details-description">${details.desc || 'No description available.'}</p>
-        <button class="download-all-button" id="download-all">Download All ${chapters.length} Chapters</button>
+        <button class="download-all-button" id="download-all">Download All Chapters 🎬</button>
         <h3>Chapters</h3>
         <div class="chapter-list">
             ${chaptersHtml}
         </div>
     `;
 
-    // Add event listener for the "Download All" button separately
     document.getElementById('download-all').addEventListener('click', () => {
         handleDownload(currentMangaData.chapters, currentMangaData.details.title);
     });
